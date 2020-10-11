@@ -96,7 +96,9 @@ fn main() {
         Err(e) => panic!("Cannot determine CMake build type: {}", e),
     };
 
-    if cfg!(all(windows, target_env = "msvc")) {
+    let target = env::var("TARGET").unwrap();
+    let win_msvc = target.contains("windows-msvc");
+    if win_msvc {
         cfg = cfg.define("CMAKE_SH", "CMAKE_SH-NOTFOUND");
 
         // cc::get_compiler have /nologo /MD default flags that are cmake::Config
@@ -112,11 +114,11 @@ fn main() {
     }
 
     let mut out_dir = "./build".to_string();
-    if cfg!(all(windows, target_env = "msvc")) {
+    if win_msvc {
         out_dir.push('/');
         out_dir.push_str(win_folder);
     }
-    let out_name = if cfg!(all(windows, target_env = "msvc")) {
+    let out_name = if win_msvc {
         if is_debug {
             if cfg!(feature = "secure") {
                 "mimalloc-static-secure-debug"
