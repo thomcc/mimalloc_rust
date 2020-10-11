@@ -9,6 +9,7 @@ categories = ["allocator"]
 description = "Sys crate wrapping the mimalloc allocator"
 license = "MIT"
 links = "mimalloc"
+build = "build/main.rs"
 
 [dependencies]
 cty = { version = "0.2", optional = true }
