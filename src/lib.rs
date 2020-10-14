@@ -29,25 +29,8 @@ use core::alloc::{GlobalAlloc, Layout};
 use core::ffi::c_void;
 use ffi::*;
 
-// Copied from https://github.com/rust-lang/rust/blob/master/src/libstd/sys_common/alloc.rs
-#[cfg(all(any(
-    target_arch = "x86",
-    target_arch = "arm",
-    target_arch = "mips",
-    target_arch = "powerpc",
-    target_arch = "powerpc64",
-    target_arch = "asmjs",
-    target_arch = "wasm32"
-)))]
-const MIN_ALIGN: usize = 8;
-
-#[cfg(all(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "mips64",
-    target_arch = "s390x",
-    target_arch = "sparc64"
-)))]
+// See `MI_MAX_ALIGN_SIZE` in `mimalloc-types.h` — mimalloc uses 16 everywhere
+// even on platforms where it's less
 const MIN_ALIGN: usize = 16;
 
 /// Drop-in mimalloc global allocator.
@@ -64,28 +47,18 @@ pub struct MiMalloc;
 unsafe impl GlobalAlloc for MiMalloc {
     #[inline]
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        if layout.align() <= MIN_ALIGN && layout.align() <= layout.size() {
+        if layout.align() <= MIN_ALIGN {
             mi_malloc(layout.size()) as *mut u8
         } else {
-            #[cfg(target_os = "macos")]
-            if layout.align() > (1 << 31) {
-                return core::ptr::null_mut();
-            }
-
             mi_malloc_aligned(layout.size(), layout.align()) as *mut u8
         }
     }
 
     #[inline]
     unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
-        if layout.align() <= MIN_ALIGN && layout.align() <= layout.size() {
+        if layout.align() <= MIN_ALIGN {
             mi_zalloc(layout.size()) as *mut u8
         } else {
-            #[cfg(target_os = "macos")]
-            if layout.align() > (1 << 31) {
-                return core::ptr::null_mut();
-            }
-
             mi_zalloc_aligned(layout.size(), layout.align()) as *mut u8
         }
     }
@@ -97,7 +70,7 @@ unsafe impl GlobalAlloc for MiMalloc {
 
     #[inline]
     unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
-        if layout.align() <= MIN_ALIGN && layout.align() <= layout.size() {
+        if layout.align() <= MIN_ALIGN {
             mi_realloc(ptr as *mut c_void, new_size) as *mut u8
         } else {
             mi_realloc_aligned(ptr as *mut c_void, new_size, layout.align()) as *mut u8
