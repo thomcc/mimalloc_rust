@@ -26,5 +26,5 @@ libmimalloc-sys = { path = "libmimalloc-sys", version = "0.1.18", default-featur
 [features]
 default = ["secure"]
 secure = ["libmimalloc-sys/secure"]
-override = ["libmimalloc-sys/override"]
+unsafe_override_libc_allocators = ["libmimalloc-sys/unsafe_override_libc_allocators"]
 local_dynamic_tls = ["libmimalloc-sys/local_dynamic_tls"]
